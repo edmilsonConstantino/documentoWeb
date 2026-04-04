@@ -8,6 +8,10 @@ use App\Http\Controllers\Admin\PermitController;
 Route::get('/documents/validation/validate', [ValidationController::class, 'validateDocument'])
     ->name('validation.validate');
 
+// Serve o ficheiro do documento diretamente
+Route::get('/documents/file/{permit}', [ValidationController::class, 'serveFile'])
+    ->name('validation.file');
+
 // Painel administrativo
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('permits', PermitController::class);

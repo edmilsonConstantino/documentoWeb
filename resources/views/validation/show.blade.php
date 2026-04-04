@@ -136,33 +136,31 @@
     </div>
     @endif
 
-    {{-- Botão de download do ficheiro --}}
+    {{-- Documento embutido --}}
     @if($permit->document_file)
     @php
         $isPdf = str_ends_with(strtolower($permit->document_original_name ?? ''), '.pdf');
+        $fileUrl = route('validation.file', $permit);
     @endphp
     <div class="card mb-4">
-        <div class="card-header fw-semibold" style="background: #0a3d62; color: #fff; border-radius: 10px 10px 0 0;">
-            <i class="bi bi-paperclip me-2"></i>Ficheiro Oficial
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between" style="background: #0a3d62; color: #fff; border-radius: 10px 10px 0 0;">
+            <span>
+                <i class="bi bi-paperclip me-2"></i>Ficheiro Oficial
+            </span>
+            <a href="{{ $fileUrl }}" download="{{ $permit->document_original_name }}"
+               class="btn btn-sm btn-light">
+                <i class="bi bi-download me-1"></i> Descarregar
+            </a>
         </div>
-        <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi {{ $isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-image text-primary' }}" style="font-size: 2rem;"></i>
-                <div>
-                    <div class="fw-semibold">{{ $permit->document_original_name }}</div>
-                    <div class="text-muted small">Documento oficial anexado</div>
+        <div class="card-body p-0">
+            @if($isPdf)
+                <iframe src="{{ $fileUrl }}" style="width:100%; height:700px; border:none; border-radius: 0 0 10px 10px;"></iframe>
+            @else
+                <div class="text-center p-3">
+                    <img src="{{ $fileUrl }}" alt="{{ $permit->document_original_name }}"
+                         style="max-width:100%; border-radius: 0 0 10px 10px;">
                 </div>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ Storage::url($permit->document_file) }}" target="_blank"
-                   class="btn btn-outline-primary">
-                    <i class="bi bi-eye me-1"></i> Visualizar
-                </a>
-                <a href="{{ Storage::url($permit->document_file) }}" download="{{ $permit->document_original_name }}"
-                   class="btn btn-primary">
-                    <i class="bi bi-download me-1"></i> Descarregar
-                </a>
-            </div>
+            @endif
         </div>
     </div>
     @endif

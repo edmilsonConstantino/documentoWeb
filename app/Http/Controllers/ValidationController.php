@@ -4,9 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Permit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ValidationController extends Controller
 {
+    public function serveFile(Permit $permit)
+    {
+        if (!$permit->document_file || !Storage::disk('public')->exists($permit->document_file)) {
+            abort(404);
+        }
+
+        $path = Storage::disk('public')->path($permit->document_file);
+        $mime = mime_content_type($path);
+
+        return response()->file($path, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => 'inline; filename="' . $permit->document_original_name . '"',
+        ]);
+    }
+
     public function validateDocument(Request $request)
     {
         $documentType = $request->query('document_type');
