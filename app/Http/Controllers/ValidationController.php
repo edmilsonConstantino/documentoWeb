@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class ValidationController extends Controller
 {
-    public function validate(Request $request)
+    public function validateDocument(Request $request)
     {
         $documentType = $request->query('document_type');
         $number       = $request->query('number');

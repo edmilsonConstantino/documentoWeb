@@ -5,7 +5,7 @@ use App\Http\Controllers\ValidationController;
 use App\Http\Controllers\Admin\PermitController;
 
 // Página de validação pública (igual ao link original)
-Route::get('/documents/validation/validate', [ValidationController::class, 'validate'])
+Route::get('/documents/validation/validate', [ValidationController::class, 'validateDocument'])
     ->name('validation.validate');
 
 // Painel administrativo
