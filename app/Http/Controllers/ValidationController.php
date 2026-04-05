@@ -40,28 +40,62 @@ class ValidationController extends Controller
             abort(404, 'Documento não encontrado.');
         }
 
-        // Se tiver ficheiro, embute como data URL (evita intercepção da extensão do browser)
+        // Se tiver ficheiro, renderiza com PDF.js (canvas) — extensão do browser não intercepta
         if ($permit->document_file && Storage::disk('public')->exists($permit->document_file)) {
-            $path    = storage_path('app/public/' . $permit->document_file);
-            $mime    = mime_content_type($path);
-            $b64     = base64_encode(file_get_contents($path));
-            $dataUrl = "data:{$mime};base64,{$b64}";
-            $name    = e($permit->document_original_name);
-            $isPdf   = str_starts_with($mime, 'application/pdf');
+            $path  = storage_path('app/public/' . $permit->document_file);
+            $mime  = mime_content_type($path);
+            $name  = e($permit->document_original_name);
+            $isPdf = str_starts_with($mime, 'application/pdf');
 
-            $embed = $isPdf
-                ? "<embed src=\"{$dataUrl}\" type=\"application/pdf\" style=\"width:100%;height:100%;border:none;\">"
-                : "<img src=\"{$dataUrl}\" alt=\"{$name}\" style=\"max-width:100%;display:block;margin:auto;\">";
+            if ($isPdf) {
+                $b64 = base64_encode(file_get_contents($path));
+                $html = <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{$name}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#525659; }
+  #viewer { display:flex; flex-direction:column; align-items:center; padding:20px 0; gap:12px; }
+  canvas { display:block; box-shadow:0 2px 8px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+<div id="viewer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const data = atob('{$b64}');
+  const bytes = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) bytes[i] = data.charCodeAt(i);
+  pdfjsLib.getDocument({ data: bytes }).promise.then(function(pdf) {
+    for (let p = 1; p <= pdf.numPages; p++) {
+      pdf.getPage(p).then(function(page) {
+        const vp = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        canvas.width  = vp.width;
+        canvas.height = vp.height;
+        document.getElementById('viewer').appendChild(canvas);
+        page.render({ canvasContext: canvas.getContext('2d'), viewport: vp });
+      });
+    }
+  });
+</script>
+</body>
+</html>
+HTML;
+            } else {
+                $b64  = base64_encode(file_get_contents($path));
+                $html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>{$name}</title>"
+                    . "<style>*{margin:0;padding:0}body{background:#525659;display:flex;justify-content:center;align-items:center;min-height:100vh}"
+                    . "img{max-width:100%;max-height:100vh}</style></head>"
+                    . "<body><img src=\"data:{$mime};base64,{$b64}\" alt=\"{$name}\"></body></html>";
+            }
 
-            return response(
-                "<!DOCTYPE html><html><head><meta charset=\"utf-8\">
-                <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
-                <title>{$name}</title>
-                <style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#525659}</style>
-                </head><body>{$embed}</body></html>",
-                200,
-                ['Content-Type' => 'text/html']
-            );
+            return response($html, 200, ['Content-Type' => 'text/html']);
         }
 
         // Sem ficheiro — mostra os dados do documento
