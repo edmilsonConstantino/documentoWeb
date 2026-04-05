@@ -36,16 +36,10 @@ class ValidationController extends Controller
             ->where('number', $number)
             ->first();
 
-        if (!$permit || !$permit->document_file || !Storage::disk('public')->exists($permit->document_file)) {
+        if (!$permit) {
             abort(404, 'Documento não encontrado.');
         }
 
-        $path = storage_path('app/public/' . $permit->document_file);
-        $mime = mime_content_type($path);
-
-        return response()->file($path, [
-            'Content-Type'        => $mime,
-            'Content-Disposition' => "inline; filename=\"{$permit->document_original_name}\"",
-        ]);
+        return view('validation.document', compact('permit'));
     }
 }

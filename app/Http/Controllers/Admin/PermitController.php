@@ -23,36 +23,27 @@ class PermitController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'number'               => 'required|unique:permits,number',
-            'reference'            => 'required|unique:permits,reference',
-            'document_type'        => 'required',
-            'client_name'          => 'required',
-            'nuit'                 => 'nullable',
-            'vehicle_registration' => 'nullable',
-            'vehicle_brand'        => 'nullable',
-            'cargo_type'           => 'nullable',
-            'capacity'             => 'nullable',
-            'origin'               => 'nullable',
-            'transit_countries'    => 'nullable|array',
-            'issued_at'            => 'required|date',
-            'expires_at'           => 'required|date|after:issued_at',
-            'status'               => 'required|in:valid,expired,cancelled',
-            'document_file'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        $request->validate([
+            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
-        $data['validation_token'] = Str::random(40);
+        $file = $request->file('document_file');
 
-        if ($request->hasFile('document_file')) {
-            $file = $request->file('document_file');
-            $data['document_file'] = $file->store('permits', 'public');
-            $data['document_original_name'] = $file->getClientOriginalName();
-        }
-
-        Permit::create($data);
+        Permit::create([
+            'number'                 => strtoupper(Str::random(10)),
+            'reference'              => 'REF-' . strtoupper(Str::random(8)),
+            'document_type'          => 'Permit',
+            'client_name'            => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'issued_at'              => now(),
+            'expires_at'             => now()->addYear(),
+            'status'                 => 'valid',
+            'validation_token'       => Str::random(40),
+            'document_file'          => $file->store('permits', 'public'),
+            'document_original_name' => $file->getClientOriginalName(),
+        ]);
 
         return redirect()->route('admin.permits.index')
-            ->with('success', 'Documento criado com sucesso!');
+            ->with('success', 'Documento carregado com sucesso!');
     }
 
     public function show(Permit $permit)
