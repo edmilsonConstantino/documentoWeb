@@ -126,9 +126,6 @@
     @endif
   </table>
 
-  <div class="footer">
-    Documento verificado pelo sistema Balcão Virtual &middot; MTC Moçambique
-  </div>
 
 </div>
 </body>
